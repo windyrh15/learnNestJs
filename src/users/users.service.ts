@@ -1,4 +1,10 @@
 import { Injectable } from '@nestjs/common';
+// DTO ------------------------------------------------------
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+// ----------------------------------------------------------
+
+import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class UsersService {
@@ -44,7 +50,11 @@ export class UsersService {
     // GET semua user, bisa difilter berdasarkan role
     findAll(role?: 'INTERN' | 'PROGRAMMER' | 'ADMIN') {
         if (role) {
-            return this.users.filter((user) => user.role === role);
+            const roleArray = this.users.filter((user) => user.role === role);
+
+            if (roleArray.length === 0) throw new NotFoundException('Role not found');
+
+            return roleArray
         }
         return this.users;
     }
@@ -52,12 +62,15 @@ export class UsersService {
     // GET satu user berdasarkan id
     findOne(id: number) {
         const user = this.users.find((user) => user.id === id);
+
+        if (!user) throw new NotFoundException('User not found')
+
         return user;
     }
 
     // POST buat user baru
     // cari id terbesar, tambahkan +1, lalu push ke array
-    create(user: { name: string; email: string; role: 'INTERN' | 'PROGRAMMER' | 'ADMIN'; password: string }) {
+    create(user: CreateUserDto) {
         const userByHighestId = [...this.users].sort((a, b) => b.id - a.id)
         const newUser = {
             id: userByHighestId[0].id + 1,
@@ -69,7 +82,7 @@ export class UsersService {
 
     // PATCH update user berdasarkan id
     // merge data lama dengan data baru (updateUser)
-    update(id: number, updateUser: { name?: string; email?: string; role?: 'INTERN' | 'PROGRAMMER' | 'ADMIN'; password?: string }) {
+    update(id: number, updateUser: UpdateUserDto) {
         this.users = this.users.map(user => {
             if (user.id === id) {
                 return { ...user, ...updateUser }
